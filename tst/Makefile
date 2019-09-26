@@ -1,3 +1,8 @@
 all:
-	gcc -ftest-coverage -I.. ../bitstream.c *.c -o main
+	gcc \
+	    -fprofile-arcs \
+	    -ftest-coverage \
+	    -I.. \
+	    ../bitstream.c *.c \
+	    -o main
 	./main
