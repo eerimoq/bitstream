@@ -197,13 +197,12 @@ void bitstream_reader_read_bytes(struct bitstream_reader_t *self_p,
 uint8_t bitstream_reader_read_u8(struct bitstream_reader_t *self_p)
 {
     uint8_t value;
-    int i;
 
-    value = 0;
+    value = (self_p->buf_p[self_p->byte_offset] << self_p->bit_offset);
+    self_p->byte_offset++;
 
-    for (i = 0; i < 8; i++) {
-        value <<= 1;
-        value |= (bitstream_reader_read_bit(self_p));
+    if (self_p->bit_offset != 0) {
+        value |= (self_p->buf_p[self_p->byte_offset] >> (8 - self_p->bit_offset));
     }
 
     return (value);
@@ -213,12 +212,19 @@ uint16_t bitstream_reader_read_u16(struct bitstream_reader_t *self_p)
 {
     uint16_t value;
     int i;
+    int offset;
 
+    offset = (16 + self_p->bit_offset);
     value = 0;
 
-    for (i = 0; i < 16; i++) {
-        value <<= 1;
-        value |= (bitstream_reader_read_bit(self_p));
+    for (i = 0; i < 2; i++) {
+        offset -= 8;
+        value |= ((uint64_t)self_p->buf_p[self_p->byte_offset] << offset);
+        self_p->byte_offset++;
+    }
+
+    if (offset != 0) {
+        value |= (self_p->buf_p[self_p->byte_offset] >> (8 - offset));
     }
 
     return (value);
@@ -228,12 +234,19 @@ uint32_t bitstream_reader_read_u32(struct bitstream_reader_t *self_p)
 {
     uint32_t value;
     int i;
+    int offset;
 
+    offset = (32 + self_p->bit_offset);
     value = 0;
 
-    for (i = 0; i < 32; i++) {
-        value <<= 1;
-        value |= (bitstream_reader_read_bit(self_p));
+    for (i = 0; i < 4; i++) {
+        offset -= 8;
+        value |= ((uint64_t)self_p->buf_p[self_p->byte_offset] << offset);
+        self_p->byte_offset++;
+    }
+
+    if (offset != 0) {
+        value |= (self_p->buf_p[self_p->byte_offset] >> (8 - offset));
     }
 
     return (value);
@@ -243,12 +256,19 @@ uint64_t bitstream_reader_read_u64(struct bitstream_reader_t *self_p)
 {
     uint64_t value;
     int i;
+    int offset;
 
+    offset = (64 + self_p->bit_offset);
     value = 0;
 
-    for (i = 0; i < 64; i++) {
-        value <<= 1;
-        value |= (bitstream_reader_read_bit(self_p));
+    for (i = 0; i < 8; i++) {
+        offset -= 8;
+        value |= ((uint64_t)self_p->buf_p[self_p->byte_offset] << offset);
+        self_p->byte_offset++;
+    }
+
+    if (offset != 0) {
+        value |= ((uint64_t)self_p->buf_p[self_p->byte_offset] >> (8 - offset));
     }
 
     return (value);
