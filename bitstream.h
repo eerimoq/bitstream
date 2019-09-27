@@ -65,18 +65,6 @@ void bitstream_writer_write_u32(struct bitstream_writer_t *self_p,
 void bitstream_writer_write_u64(struct bitstream_writer_t *self_p,
                                 uint64_t value);
 
-void bitstream_writer_write_u8_bits(struct bitstream_writer_t *self_p,
-                                    uint8_t value,
-                                    int number_of_bits);
-
-void bitstream_writer_write_u16_bits(struct bitstream_writer_t *self_p,
-                                     uint16_t value,
-                                     int number_of_bits);
-
-void bitstream_writer_write_u32_bits(struct bitstream_writer_t *self_p,
-                                     uint32_t value,
-                                     int number_of_bits);
-
 void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
                                      uint64_t value,
                                      int number_of_bits);

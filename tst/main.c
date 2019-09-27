@@ -132,11 +132,11 @@ TEST(write_u8_bits)
     memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
-    bitstream_writer_write_u8_bits(&writer, 0x01, 4);
+    bitstream_writer_write_u64_bits(&writer, 0x01, 4);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
     ASSERT_MEMORY(&buf[0], "\x10", 1);
 
-    bitstream_writer_write_u8_bits(&writer, 0x01, 4);
+    bitstream_writer_write_u64_bits(&writer, 0x01, 4);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
     ASSERT_MEMORY(&buf[0], "\x11", 1);
 }
@@ -149,11 +149,11 @@ TEST(write_u16_bits)
     memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
-    bitstream_writer_write_u16_bits(&writer, 0x123, 12);
+    bitstream_writer_write_u64_bits(&writer, 0x123, 12);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
     ASSERT_MEMORY(&buf[0], "\x12\x30", 2);
 
-    bitstream_writer_write_u16_bits(&writer, 0x123, 12);
+    bitstream_writer_write_u64_bits(&writer, 0x123, 12);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
     ASSERT_MEMORY(&buf[0], "\x12\x31\x23", 3);
 }
@@ -166,11 +166,11 @@ TEST(write_u32_bits)
     memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
-    bitstream_writer_write_u32_bits(&writer, 0x12345, 20);
+    bitstream_writer_write_u64_bits(&writer, 0x12345, 20);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
     ASSERT_MEMORY(&buf[0], "\x12\x34\x50", 3);
 
-    bitstream_writer_write_u32_bits(&writer, 0x12345, 20);
+    bitstream_writer_write_u64_bits(&writer, 0x12345, 20);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 5);
     ASSERT_MEMORY(&buf[0], "\x12\x34\x51\x23\x45", 5);
 }
@@ -190,6 +190,38 @@ TEST(write_u64_bits)
     bitstream_writer_write_u64_bits(&writer, 0x123456789, 36);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 9);
     ASSERT_MEMORY(&buf[0], "\x12\x34\x56\x78\x91\x23\x45\x67\x89", 9);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 0);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 9);
+    ASSERT_MEMORY(&buf[0], "\x12\x34\x56\x78\x91\x23\x45\x67\x89", 9);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 10);
+    ASSERT_MEMORY(&buf[0], "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x80", 10);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 7);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 10);
+    ASSERT_MEMORY(&buf[0], "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81", 10);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 8);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 11);
+    ASSERT_MEMORY(&buf[0], "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01", 11);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 63);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 19);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
+        "\x00\x00\x02",
+        19);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 64);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 27);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
+        "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x02",
+        27);
 }
 
 TEST(read_bit)

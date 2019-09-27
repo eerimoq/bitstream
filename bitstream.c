@@ -134,81 +134,60 @@ void bitstream_writer_write_u64(struct bitstream_writer_t *self_p,
     self_p->byte_offset += 8;
 }
 
-void bitstream_writer_write_u8_bits(struct bitstream_writer_t *self_p,
-                                    uint8_t value,
-                                    int number_of_bits)
-{
-    int i;
-
-    for (i = 0; i < number_of_bits; i++) {
-        bitstream_writer_write_bit(self_p, (value >> (number_of_bits - i - 1)) & 0x1);
-    }
-}
-
-void bitstream_writer_write_u16_bits(struct bitstream_writer_t *self_p,
-                                     uint16_t value,
-                                     int number_of_bits)
-{
-    int i;
-
-    for (i = 0; i < number_of_bits; i++) {
-        bitstream_writer_write_bit(self_p, (value >> (number_of_bits - i - 1)) & 0x1);
-    }
-}
-
-void bitstream_writer_write_u32_bits(struct bitstream_writer_t *self_p,
-                                     uint32_t value,
-                                     int number_of_bits)
-{
-    int i;
-
-    for (i = 0; i < number_of_bits; i++) {
-        bitstream_writer_write_bit(self_p, (value >> (number_of_bits - i - 1)) & 0x1);
-    }
-}
-
-#if 1
-
 void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
                                      uint64_t value,
                                      int number_of_bits)
 {
     int i;
-
-    for (i = 0; i < number_of_bits; i++) {
-        bitstream_writer_write_bit(self_p, (value >> (number_of_bits - i - 1)) & 0x1);
-    }
-}
-
-#else
-
-void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
-                                     uint64_t value,
-                                     int number_of_bits)
-{
-    int i;
-    int rest_bits;
+    int first_byte_bits;
+    int last_byte_bits;
     int full_bytes;
 
-    rest_bits = (number_of_bits % 8);
-    full_bytes = (number_of_bits / 8);
-
-    self_p->buf_p[self_p->byte_offset] |= (value >> (56 + self_p->bit_offset));
-
-    if (self_p->bit_offset != 0) {
-        self_p->buf_p[self_p->byte_offset + 8] = (value << (8 - self_p->bit_offset));
-        value >>= self_p->bit_offset;
+    if (number_of_bits == 0) {
+        return;
     }
 
-    for (i = 7; i > 0; i--) {
-        self_p->buf_p[self_p->byte_offset + i] = value;
+    /* Align beginning. */
+    first_byte_bits = (8 - self_p->bit_offset);
+
+    if (first_byte_bits != 8) {
+        if (number_of_bits < first_byte_bits) {
+            self_p->buf_p[self_p->byte_offset] |= (value << (first_byte_bits
+                                                             - number_of_bits));
+            self_p->bit_offset += number_of_bits;
+        } else {
+            self_p->buf_p[self_p->byte_offset] |= (value >> (number_of_bits
+                                                             - first_byte_bits));
+            self_p->byte_offset++;
+            self_p->bit_offset = 0;
+        }
+
+        number_of_bits -= first_byte_bits;
+
+        if (number_of_bits == 0) {
+            return;
+        }
+    }
+
+    /* Align end. */
+    last_byte_bits = (number_of_bits % 8);
+    full_bytes = (number_of_bits / 8);
+
+    if (last_byte_bits != 0) {
+        self_p->buf_p[self_p->byte_offset + full_bytes] = (value
+                                                           << (8 - last_byte_bits));
+        value >>= (8 - last_byte_bits);
+        self_p->bit_offset = last_byte_bits;
+    }
+
+    /* Copy middle bytes. */
+    for (i = full_bytes; i > 0; i--) {
+        self_p->buf_p[self_p->byte_offset + i - 1] = value;
         value >>= 8;
     }
 
-    self_p->byte_offset += 8;
+    self_p->byte_offset += full_bytes;
 }
-
-#endif
 
 int bitstream_writer_size_in_bytes(struct bitstream_writer_t *self_p)
 {
