@@ -79,30 +79,59 @@ void bitstream_writer_write_u8(struct bitstream_writer_t *self_p,
 void bitstream_writer_write_u16(struct bitstream_writer_t *self_p,
                                 uint16_t value)
 {
-    bitstream_writer_write_u8(self_p, value >> 8);
-    bitstream_writer_write_u8(self_p, value >> 0);
+    if (self_p->bit_offset == 0) {
+        self_p->buf_p[self_p->byte_offset] = (value >> 8);
+    } else {
+        self_p->buf_p[self_p->byte_offset] |= (value >> (8 + self_p->bit_offset));
+        self_p->buf_p[self_p->byte_offset + 2] = (value << (8 - self_p->bit_offset));
+        value >>= self_p->bit_offset;
+    }
+
+    self_p->buf_p[self_p->byte_offset + 1] = value;
+    self_p->byte_offset += 2;
 }
 
 void bitstream_writer_write_u32(struct bitstream_writer_t *self_p,
                                 uint32_t value)
 {
-    bitstream_writer_write_u8(self_p, value >> 24);
-    bitstream_writer_write_u8(self_p, value >> 16);
-    bitstream_writer_write_u8(self_p, value >> 8);
-    bitstream_writer_write_u8(self_p, value >> 0);
+    int i;
+
+    if (self_p->bit_offset == 0) {
+        self_p->buf_p[self_p->byte_offset] = (value >> 24);
+    } else {
+        self_p->buf_p[self_p->byte_offset] |= (value >> (24 + self_p->bit_offset));
+        self_p->buf_p[self_p->byte_offset + 4] = (value << (8 - self_p->bit_offset));
+        value >>= self_p->bit_offset;
+    }
+
+    for (i = 3; i > 0; i--) {
+        self_p->buf_p[self_p->byte_offset + i] = value;
+        value >>= 8;
+    }
+
+    self_p->byte_offset += 4;
 }
 
 void bitstream_writer_write_u64(struct bitstream_writer_t *self_p,
                                 uint64_t value)
 {
-    bitstream_writer_write_u8(self_p, value >> 56);
-    bitstream_writer_write_u8(self_p, value >> 48);
-    bitstream_writer_write_u8(self_p, value >> 40);
-    bitstream_writer_write_u8(self_p, value >> 32);
-    bitstream_writer_write_u8(self_p, value >> 24);
-    bitstream_writer_write_u8(self_p, value >> 16);
-    bitstream_writer_write_u8(self_p, value >> 8);
-    bitstream_writer_write_u8(self_p, value >> 0);
+    int i;
+
+
+    if (self_p->bit_offset == 0) {
+        self_p->buf_p[self_p->byte_offset] = (value >> 56);
+    } else {
+        self_p->buf_p[self_p->byte_offset] |= (value >> (56 + self_p->bit_offset));
+        self_p->buf_p[self_p->byte_offset + 8] = (value << (8 - self_p->bit_offset));
+        value >>= self_p->bit_offset;
+    }
+
+    for (i = 7; i > 0; i--) {
+        self_p->buf_p[self_p->byte_offset + i] = value;
+        value >>= 8;
+    }
+
+    self_p->byte_offset += 8;
 }
 
 void bitstream_writer_write_u8_bits(struct bitstream_writer_t *self_p,
@@ -138,6 +167,8 @@ void bitstream_writer_write_u32_bits(struct bitstream_writer_t *self_p,
     }
 }
 
+#if 1
+
 void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
                                      uint64_t value,
                                      int number_of_bits)
@@ -148,6 +179,36 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
         bitstream_writer_write_bit(self_p, (value >> (number_of_bits - i - 1)) & 0x1);
     }
 }
+
+#else
+
+void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
+                                     uint64_t value,
+                                     int number_of_bits)
+{
+    int i;
+    int rest_bits;
+    int full_bytes;
+
+    rest_bits = (number_of_bits % 8);
+    full_bytes = (number_of_bits / 8);
+
+    self_p->buf_p[self_p->byte_offset] |= (value >> (56 + self_p->bit_offset));
+
+    if (self_p->bit_offset != 0) {
+        self_p->buf_p[self_p->byte_offset + 8] = (value << (8 - self_p->bit_offset));
+        value >>= self_p->bit_offset;
+    }
+
+    for (i = 7; i > 0; i--) {
+        self_p->buf_p[self_p->byte_offset + i] = value;
+        value >>= 8;
+    }
+
+    self_p->byte_offset += 8;
+}
+
+#endif
 
 int bitstream_writer_size_in_bytes(struct bitstream_writer_t *self_p)
 {
@@ -219,7 +280,7 @@ uint16_t bitstream_reader_read_u16(struct bitstream_reader_t *self_p)
 
     for (i = 0; i < 2; i++) {
         offset -= 8;
-        value |= ((uint64_t)self_p->buf_p[self_p->byte_offset] << offset);
+        value |= ((uint16_t)self_p->buf_p[self_p->byte_offset] << offset);
         self_p->byte_offset++;
     }
 
@@ -241,7 +302,7 @@ uint32_t bitstream_reader_read_u32(struct bitstream_reader_t *self_p)
 
     for (i = 0; i < 4; i++) {
         offset -= 8;
-        value |= ((uint64_t)self_p->buf_p[self_p->byte_offset] << offset);
+        value |= ((uint32_t)self_p->buf_p[self_p->byte_offset] << offset);
         self_p->byte_offset++;
     }
 

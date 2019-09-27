@@ -6,6 +6,7 @@ TEST(write_bit)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_bit(&writer, 1);
@@ -35,14 +36,15 @@ TEST(write_bytes)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
-    bitstream_writer_write_bytes(&writer, "\x12", 1);
+    bitstream_writer_write_bytes(&writer, (uint8_t *)"\x12", 1);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
     ASSERT_MEMORY(&buf[0], "\x12", 1);
 
     bitstream_writer_write_bit(&writer, 1);
-    bitstream_writer_write_bytes(&writer, "\xf1\x00", 2);
+    bitstream_writer_write_bytes(&writer, (uint8_t *)"\xf1\x00", 2);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 4);
     ASSERT_MEMORY(&buf[0], "\x12\xf8\x80", 4);
 }
@@ -52,6 +54,7 @@ TEST(write_u8)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u8(&writer, 0x12);
@@ -69,6 +72,7 @@ TEST(write_u16)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u16(&writer, 0x1234);
@@ -86,6 +90,7 @@ TEST(write_u32)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u32(&writer, 0x12345678);
@@ -103,6 +108,7 @@ TEST(write_u64)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u64(&writer, 0x0123456789abcdefll);
@@ -123,6 +129,7 @@ TEST(write_u8_bits)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u8_bits(&writer, 0x01, 4);
@@ -139,6 +146,7 @@ TEST(write_u16_bits)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u16_bits(&writer, 0x123, 12);
@@ -155,6 +163,7 @@ TEST(write_u32_bits)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u32_bits(&writer, 0x12345, 20);
@@ -171,6 +180,7 @@ TEST(write_u64_bits)
     struct bitstream_writer_t writer;
     uint8_t buf[32];
 
+    memset(&buf[0], 0xff, sizeof(buf));
     bitstream_writer_init(&writer, &buf[0]);
 
     bitstream_writer_write_u64_bits(&writer, 0x123456789, 36);
