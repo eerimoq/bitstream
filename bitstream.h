@@ -71,6 +71,29 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
                                      uint64_t value,
                                      int number_of_bits);
 
+void bitstream_writer_insert_bit(struct bitstream_writer_t *self_p,
+                                 int value);
+
+void bitstream_writer_insert_bytes(struct bitstream_writer_t *self_p,
+                                   const uint8_t *buf_p,
+                                   int length);
+
+void bitstream_writer_insert_u8(struct bitstream_writer_t *self_p,
+                                uint8_t value);
+
+void bitstream_writer_insert_u16(struct bitstream_writer_t *self_p,
+                                 uint16_t value);
+
+void bitstream_writer_insert_u32(struct bitstream_writer_t *self_p,
+                                 uint32_t value);
+
+void bitstream_writer_insert_u64(struct bitstream_writer_t *self_p,
+                                 uint64_t value);
+
+void bitstream_writer_insert_u64_bits(struct bitstream_writer_t *self_p,
+                                      uint64_t value,
+                                      int number_of_bits);
+
 void bitstream_reader_init(struct bitstream_reader_t *self_p,
                            const uint8_t *buf_p);
 

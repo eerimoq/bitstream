@@ -199,6 +199,81 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
     self_p->byte_offset += full_bytes;
 }
 
+void bitstream_writer_insert_bit(struct bitstream_writer_t *self_p,
+                                 int value)
+{
+    uint8_t *buf_p;
+    uint8_t data;
+
+    buf_p = &self_p->buf_p[self_p->byte_offset];
+    data = *buf_p;
+    *buf_p = 0;
+    data &= ~(0x80 >> self_p->bit_offset);
+    bitstream_writer_write_bit(self_p, value);
+    *buf_p |= data;
+}
+
+void bitstream_writer_insert_bytes(struct bitstream_writer_t *self_p,
+                                   const uint8_t *buf_p,
+                                   int length)
+{
+    int i;
+
+    for (i = 0; i < length; i++) {
+        bitstream_writer_insert_u8(self_p, buf_p[i]);
+    }
+}
+
+void bitstream_writer_insert_u8(struct bitstream_writer_t *self_p,
+                                uint8_t value)
+{
+    int i;
+
+    for (i = 0; i < 8; i++) {
+        bitstream_writer_insert_bit(self_p, value >> (7 - i));
+    }
+}
+
+void bitstream_writer_insert_u16(struct bitstream_writer_t *self_p,
+                                 uint16_t value)
+{
+    bitstream_writer_insert_u8(self_p, value >> 8);
+    bitstream_writer_insert_u8(self_p, value);
+}
+
+void bitstream_writer_insert_u32(struct bitstream_writer_t *self_p,
+                                 uint32_t value)
+{
+    bitstream_writer_insert_u8(self_p, value >> 24);
+    bitstream_writer_insert_u8(self_p, value >> 16);
+    bitstream_writer_insert_u8(self_p, value >> 8);
+    bitstream_writer_insert_u8(self_p, value);
+}
+
+void bitstream_writer_insert_u64(struct bitstream_writer_t *self_p,
+                                 uint64_t value)
+{
+    bitstream_writer_insert_u8(self_p, value >> 56);
+    bitstream_writer_insert_u8(self_p, value >> 48);
+    bitstream_writer_insert_u8(self_p, value >> 40);
+    bitstream_writer_insert_u8(self_p, value >> 32);
+    bitstream_writer_insert_u8(self_p, value >> 24);
+    bitstream_writer_insert_u8(self_p, value >> 16);
+    bitstream_writer_insert_u8(self_p, value >> 8);
+    bitstream_writer_insert_u8(self_p, value);
+}
+
+void bitstream_writer_insert_u64_bits(struct bitstream_writer_t *self_p,
+                                      uint64_t value,
+                                      int number_of_bits)
+{
+    int i;
+
+    for (i = 0; i < number_of_bits; i++) {
+        bitstream_writer_insert_bit(self_p, value >> (number_of_bits - i - 1));
+    }
+}
+
 void bitstream_reader_init(struct bitstream_reader_t *self_p,
                            const uint8_t *buf_p)
 {
