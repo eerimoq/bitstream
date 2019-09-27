@@ -34,6 +34,16 @@ void bitstream_writer_init(struct bitstream_writer_t *self_p,
     self_p->bit_offset = 0;
 }
 
+int bitstream_writer_size_in_bits(struct bitstream_writer_t *self_p)
+{
+    return (8 * self_p->byte_offset + self_p->bit_offset);
+}
+
+int bitstream_writer_size_in_bytes(struct bitstream_writer_t *self_p)
+{
+    return (self_p->byte_offset + (self_p->bit_offset + 7) / 8);
+}
+
 void bitstream_writer_write_bit(struct bitstream_writer_t *self_p,
                                 int value)
 {
@@ -164,7 +174,7 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
 
         number_of_bits -= first_byte_bits;
 
-        if (number_of_bits == 0) {
+        if (number_of_bits <= 0) {
             return;
         }
     }
@@ -187,11 +197,6 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
     }
 
     self_p->byte_offset += full_bytes;
-}
-
-int bitstream_writer_size_in_bytes(struct bitstream_writer_t *self_p)
-{
-    return (self_p->byte_offset + (self_p->bit_offset + 7) / 8);
 }
 
 void bitstream_reader_init(struct bitstream_reader_t *self_p,

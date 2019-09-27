@@ -44,6 +44,8 @@ struct bitstream_reader_t {
 void bitstream_writer_init(struct bitstream_writer_t *self_p,
                            uint8_t *buf_p);
 
+int bitstream_writer_size_in_bits(struct bitstream_writer_t *self_p);
+
 int bitstream_writer_size_in_bytes(struct bitstream_writer_t *self_p);
 
 void bitstream_writer_write_bit(struct bitstream_writer_t *self_p,

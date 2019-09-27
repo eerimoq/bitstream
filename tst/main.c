@@ -222,6 +222,42 @@ TEST(write_u64_bits)
         "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
         "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x02",
         27);
+
+    /* All bits (one) fits in non-empty first byte (7 bits already
+       written). */
+    ASSERT_EQ(bitstream_writer_size_in_bits(&writer) % 8, 7);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 27);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
+        "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03",
+        27);
+
+    /* All bits (one) fits in empty first byte (0 bits already
+       written). */
+    ASSERT_EQ(bitstream_writer_size_in_bits(&writer) % 8, 0);
+
+    bitstream_writer_write_u64_bits(&writer, 0x1, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 28);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
+        "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x80",
+        28);
+
+    /* All bits (6) fits in non-empty first byte (1 bits already
+       written). */
+    ASSERT_EQ(bitstream_writer_size_in_bits(&writer) % 8, 1);
+
+    bitstream_writer_write_u64_bits(&writer, 0x21, 6);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 28);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
+        "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\xc2",
+        28);
 }
 
 TEST(read_bit)
