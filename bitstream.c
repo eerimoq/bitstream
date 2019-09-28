@@ -225,39 +225,6 @@ void bitstream_writer_write_repeated_u8(struct bitstream_writer_t *self_p,
     }
 }
 
-void bitstream_writer_write_repeated_u16(struct bitstream_writer_t *self_p,
-                                         uint16_t value,
-                                         int length)
-{
-    int i;
-
-    for (i = 0; i < length; i++) {
-        bitstream_writer_write_u16(self_p, value);
-    }
-}
-
-void bitstream_writer_write_repeated_u32(struct bitstream_writer_t *self_p,
-                                         uint32_t value,
-                                         int length)
-{
-    int i;
-
-    for (i = 0; i < length; i++) {
-        bitstream_writer_write_u32(self_p, value);
-    }
-}
-
-void bitstream_writer_write_repeated_u64(struct bitstream_writer_t *self_p,
-                                         uint64_t value,
-                                         int length)
-{
-    int i;
-
-    for (i = 0; i < length; i++) {
-        bitstream_writer_write_u64(self_p, value);
-    }
-}
-
 void bitstream_writer_insert_bit(struct bitstream_writer_t *self_p,
                                  int value)
 {
