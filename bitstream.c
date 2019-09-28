@@ -554,3 +554,11 @@ uint64_t bitstream_reader_read_u64_bits(struct bitstream_reader_t *self_p,
 
     return (value);
 }
+
+void bitstream_reader_seek(struct bitstream_reader_t *self_p,
+                           int offset)
+{
+    offset += self_p->bit_offset;
+    self_p->byte_offset += (offset / 8);
+    self_p->bit_offset = (offset % 8);
+}

@@ -209,6 +209,19 @@ TEST(write_u64_bits)
         28);
 }
 
+TEST(write_u64_bits_single_bit)
+{
+    struct bitstream_writer_t writer;
+    uint8_t buf[32];
+
+    memset(&buf[0], 0xff, sizeof(buf));
+    bitstream_writer_init(&writer, &buf[0]);
+
+    bitstream_writer_write_u64_bits(&writer, 1, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
+    ASSERT_MEMORY(&buf[0], "\x80", 1);
+}
+
 TEST(write_repeated_bit)
 {
     struct bitstream_writer_t writer;
@@ -593,6 +606,7 @@ int main()
         write_u32,
         write_u64,
         write_u64_bits,
+        write_u64_bits_single_bit,
         write_repeated_bit,
         write_repeated_u8,
         write_bounds_save_restore,

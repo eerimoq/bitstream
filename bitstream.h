@@ -29,6 +29,8 @@
 
 #include <stdint.h>
 
+#define BITSTREAM_VERSION "0.1.0"
+
 struct bitstream_writer_t {
     uint8_t *buf_p;
     int byte_offset;
@@ -164,5 +166,9 @@ uint32_t bitstream_reader_read_u32_bits(struct bitstream_reader_t *self_p,
 
 uint64_t bitstream_reader_read_u64_bits(struct bitstream_reader_t *self_p,
                                         int number_of_bits);
+
+/* Move read position. */
+void bitstream_reader_seek(struct bitstream_reader_t *self_p,
+                           int offset);
 
 #endif
