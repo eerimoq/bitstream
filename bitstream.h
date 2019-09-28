@@ -60,10 +60,8 @@ int bitstream_writer_size_in_bits(struct bitstream_writer_t *self_p);
 
 int bitstream_writer_size_in_bytes(struct bitstream_writer_t *self_p);
 
-/*
- * Write bits to the stream. Clears each byte before bits are written.
- */
-
+/* Write bits to the stream. Clears each byte before bits are
+   written. */
 void bitstream_writer_write_bit(struct bitstream_writer_t *self_p,
                                 int value);
 
@@ -95,10 +93,7 @@ void bitstream_writer_write_repeated_u8(struct bitstream_writer_t *self_p,
                                         uint8_t value,
                                         int length);
 
-/*
- * Insert bits into the stream. Leaves all other bits unmodified.
- */
-
+/* Insert bits into the stream. Leaves all other bits unmodified. */
 void bitstream_writer_insert_bit(struct bitstream_writer_t *self_p,
                                  int value);
 
@@ -127,6 +122,8 @@ void bitstream_writer_insert_u64_bits(struct bitstream_writer_t *self_p,
 void bitstream_writer_seek(struct bitstream_writer_t *self_p,
                            int offset);
 
+/* Save-restore first and last bytes in given range, so write can be
+   used in given range. */
 void bitstream_writer_bounds_save(struct bitstream_writer_bounds_t *self_p,
                                   struct bitstream_writer_t *writer_p,
                                   int bit_offset,
@@ -141,10 +138,7 @@ void bitstream_writer_bounds_restore(struct bitstream_writer_bounds_t *self_p);
 void bitstream_reader_init(struct bitstream_reader_t *self_p,
                            const uint8_t *buf_p);
 
-/*
- * Read bits from the stream.
- */
-
+/* Read bits from the stream. */
 int bitstream_reader_read_bit(struct bitstream_reader_t *self_p);
 
 void bitstream_reader_read_bytes(struct bitstream_reader_t *self_p,
