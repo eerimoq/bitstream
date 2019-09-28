@@ -124,57 +124,6 @@ TEST(write_u64)
         17);
 }
 
-TEST(write_u8_bits)
-{
-    struct bitstream_writer_t writer;
-    uint8_t buf[32];
-
-    memset(&buf[0], 0xff, sizeof(buf));
-    bitstream_writer_init(&writer, &buf[0]);
-
-    bitstream_writer_write_u64_bits(&writer, 0x01, 4);
-    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
-    ASSERT_MEMORY(&buf[0], "\x10", 1);
-
-    bitstream_writer_write_u64_bits(&writer, 0x01, 4);
-    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
-    ASSERT_MEMORY(&buf[0], "\x11", 1);
-}
-
-TEST(write_u16_bits)
-{
-    struct bitstream_writer_t writer;
-    uint8_t buf[32];
-
-    memset(&buf[0], 0xff, sizeof(buf));
-    bitstream_writer_init(&writer, &buf[0]);
-
-    bitstream_writer_write_u64_bits(&writer, 0x123, 12);
-    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
-    ASSERT_MEMORY(&buf[0], "\x12\x30", 2);
-
-    bitstream_writer_write_u64_bits(&writer, 0x123, 12);
-    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
-    ASSERT_MEMORY(&buf[0], "\x12\x31\x23", 3);
-}
-
-TEST(write_u32_bits)
-{
-    struct bitstream_writer_t writer;
-    uint8_t buf[32];
-
-    memset(&buf[0], 0xff, sizeof(buf));
-    bitstream_writer_init(&writer, &buf[0]);
-
-    bitstream_writer_write_u64_bits(&writer, 0x12345, 20);
-    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
-    ASSERT_MEMORY(&buf[0], "\x12\x34\x50", 3);
-
-    bitstream_writer_write_u64_bits(&writer, 0x12345, 20);
-    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 5);
-    ASSERT_MEMORY(&buf[0], "\x12\x34\x51\x23\x45", 5);
-}
-
 TEST(write_u64_bits)
 {
     struct bitstream_writer_t writer;
@@ -258,6 +207,115 @@ TEST(write_u64_bits)
         "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
         "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\xc2",
         28);
+}
+
+TEST(write_repeated_bit)
+{
+    struct bitstream_writer_t writer;
+    uint8_t buf[32];
+
+    memset(&buf[0], 0xff, sizeof(buf));
+    bitstream_writer_init(&writer, &buf[0]);
+
+    bitstream_writer_write_repeated_bit(&writer, 1, 0);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 0);
+
+    bitstream_writer_write_repeated_bit(&writer, 1, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
+    ASSERT_MEMORY(&buf[0], "\x80", 1);
+
+    bitstream_writer_write_repeated_bit(&writer, 0, 6);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
+    ASSERT_MEMORY(&buf[0], "\x80", 1);
+
+    bitstream_writer_write_repeated_bit(&writer, 1, 2);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
+    ASSERT_MEMORY(&buf[0], "\x81\x80", 2);
+
+    bitstream_writer_write_repeated_bit(&writer, 1, 10);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
+    ASSERT_MEMORY(&buf[0], "\x81\xff\xe0", 3);
+
+    bitstream_writer_write_repeated_bit(&writer, 0, 10);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 4);
+    ASSERT_MEMORY(&buf[0], "\x81\xff\xe0\x00", 4);
+
+    bitstream_writer_write_repeated_bit(&writer, 1, 18);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 6);
+    ASSERT_MEMORY(&buf[0], "\x81\xff\xe0\x07\xff\xfe", 6);
+
+    bitstream_writer_write_repeated_bit(&writer, 1, 33);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 10);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x81\xff\xe0\x07\xff\xff\xff\xff\xff\xff",
+        10);
+
+    bitstream_writer_write_repeated_bit(&writer, 1, 70);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 19);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x81\xff\xe0\x07\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+        "\xff\xff\xfc",
+        19);
+}
+
+TEST(write_repeated_u8)
+{
+    struct bitstream_writer_t writer;
+    uint8_t buf[32];
+
+    memset(&buf[0], 0xff, sizeof(buf));
+    bitstream_writer_init(&writer, &buf[0]);
+
+    bitstream_writer_write_repeated_u8(&writer, 0x12, 0);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 0);
+
+    bitstream_writer_write_repeated_u8(&writer, 0x12, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
+    ASSERT_MEMORY(&buf[0], "\x12", 1);
+
+    bitstream_writer_write_repeated_bit(&writer, 0, 1);
+    bitstream_writer_write_repeated_u8(&writer, 0x34, 2);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 4);
+    ASSERT_MEMORY(&buf[0], "\x12\x1a\x1a\x00", 4);
+}
+
+TEST(write_bounds_save_restore)
+{
+    struct bitstream_writer_t writer;
+    struct bitstream_writer_bounds_t bounds;
+    uint8_t buf[32];
+
+    memset(&buf[0], 0xff, sizeof(buf));
+    bitstream_writer_init(&writer, &buf[0]);
+
+    bitstream_writer_bounds_save(&bounds, &writer, 0, 0);
+    bitstream_writer_bounds_restore(&bounds);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 0);
+    ASSERT_MEMORY(&buf[0], "\xff", 1);
+
+    bitstream_writer_bounds_save(&bounds, &writer, 0, 1);
+    bitstream_writer_write_bit(&writer, 0);
+    bitstream_writer_bounds_restore(&bounds);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
+    ASSERT_MEMORY(&buf[0], "\x7f", 1);
+
+    bitstream_writer_bounds_save(&bounds, &writer, 1, 8);
+    bitstream_writer_write_u8(&writer, 0);
+    bitstream_writer_bounds_restore(&bounds);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
+    ASSERT_MEMORY(&buf[0], "\x00\x7f", 2);
+
+    memset(&buf[0], 0xff, sizeof(buf));
+    bitstream_writer_init(&writer, &buf[0]);
+
+    bitstream_writer_bounds_save(&bounds, &writer, 5, 8);
+    bitstream_writer_seek(&writer, 5);
+    bitstream_writer_write_u8(&writer, 0);
+    bitstream_writer_bounds_restore(&bounds);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
+    ASSERT_MEMORY(&buf[0], "\xf8\x07", 2);
 }
 
 TEST(insert_bit)
@@ -388,10 +446,12 @@ TEST(insert_u64_bits)
 
     bitstream_writer_insert_u64_bits(&writer, 0, 1);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
+    ASSERT_EQ(bitstream_writer_size_in_bits(&writer), 1);
     ASSERT_MEMORY(&buf[0], "\x7f\xff", 2);
 
     bitstream_writer_insert_u64_bits(&writer, 0x12345, 20);
     ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
+    ASSERT_EQ(bitstream_writer_size_in_bits(&writer), 21);
     ASSERT_MEMORY(&buf[0], "\x09\x1a\x2f\xff", 4);
 }
 
@@ -532,10 +592,10 @@ int main()
         write_u16,
         write_u32,
         write_u64,
-        write_u8_bits,
-        write_u16_bits,
-        write_u32_bits,
         write_u64_bits,
+        write_repeated_bit,
+        write_repeated_u8,
+        write_bounds_save_restore,
         insert_bit,
         insert_bytes,
         insert_u8,

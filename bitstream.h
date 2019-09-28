@@ -35,11 +35,23 @@ struct bitstream_writer_t {
     int bit_offset;
 };
 
+struct bitstream_writer_bounds_t {
+    struct bitstream_writer_t *writer_p;
+    int first_byte_offset;
+    uint8_t first_byte;
+    int last_byte_offset;
+    uint8_t last_byte;
+};
+
 struct bitstream_reader_t {
     const uint8_t *buf_p;
     int byte_offset;
     int bit_offset;
 };
+
+/*
+ * The writer.
+ */
 
 void bitstream_writer_init(struct bitstream_writer_t *self_p,
                            uint8_t *buf_p);
@@ -75,6 +87,14 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
                                      uint64_t value,
                                      int number_of_bits);
 
+void bitstream_writer_write_repeated_bit(struct bitstream_writer_t *self_p,
+                                         int value,
+                                         int length);
+
+void bitstream_writer_write_repeated_u8(struct bitstream_writer_t *self_p,
+                                        uint8_t value,
+                                        int length);
+
 /*
  * Insert bits into the stream. Leaves all other bits unmodified.
  */
@@ -101,6 +121,22 @@ void bitstream_writer_insert_u64(struct bitstream_writer_t *self_p,
 void bitstream_writer_insert_u64_bits(struct bitstream_writer_t *self_p,
                                       uint64_t value,
                                       int number_of_bits);
+
+/* Move write position. Use write with care after seek, as seek does
+   not clear bytes. */
+void bitstream_writer_seek(struct bitstream_writer_t *self_p,
+                           int offset);
+
+void bitstream_writer_bounds_save(struct bitstream_writer_bounds_t *self_p,
+                                  struct bitstream_writer_t *writer_p,
+                                  int bit_offset,
+                                  int length);
+
+void bitstream_writer_bounds_restore(struct bitstream_writer_bounds_t *self_p);
+
+/*
+ * The reader.
+ */
 
 void bitstream_reader_init(struct bitstream_reader_t *self_p,
                            const uint8_t *buf_p);

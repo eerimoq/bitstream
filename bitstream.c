@@ -186,7 +186,7 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
     if (last_byte_bits != 0) {
         self_p->buf_p[self_p->byte_offset + full_bytes] = (value
                                                            << (8 - last_byte_bits));
-        value >>= (8 - last_byte_bits);
+        value >>= last_byte_bits;
         self_p->bit_offset = last_byte_bits;
     }
 
@@ -199,78 +199,208 @@ void bitstream_writer_write_u64_bits(struct bitstream_writer_t *self_p,
     self_p->byte_offset += full_bytes;
 }
 
+void bitstream_writer_write_repeated_bit(struct bitstream_writer_t *self_p,
+                                         int value,
+                                         int length)
+{
+    int i;
+
+    for (i = 0; i < (length % 8); i++) {
+        bitstream_writer_write_bit(self_p, value);
+    }
+
+    bitstream_writer_write_repeated_u8(self_p,
+                                       (value != 0 ? 0xff : 0x00),
+                                       length / 8);
+}
+
+void bitstream_writer_write_repeated_u8(struct bitstream_writer_t *self_p,
+                                        uint8_t value,
+                                        int length)
+{
+    int i;
+
+    for (i = 0; i < length; i++) {
+        bitstream_writer_write_u8(self_p, value);
+    }
+}
+
+void bitstream_writer_write_repeated_u16(struct bitstream_writer_t *self_p,
+                                         uint16_t value,
+                                         int length)
+{
+    int i;
+
+    for (i = 0; i < length; i++) {
+        bitstream_writer_write_u16(self_p, value);
+    }
+}
+
+void bitstream_writer_write_repeated_u32(struct bitstream_writer_t *self_p,
+                                         uint32_t value,
+                                         int length)
+{
+    int i;
+
+    for (i = 0; i < length; i++) {
+        bitstream_writer_write_u32(self_p, value);
+    }
+}
+
+void bitstream_writer_write_repeated_u64(struct bitstream_writer_t *self_p,
+                                         uint64_t value,
+                                         int length)
+{
+    int i;
+
+    for (i = 0; i < length; i++) {
+        bitstream_writer_write_u64(self_p, value);
+    }
+}
+
 void bitstream_writer_insert_bit(struct bitstream_writer_t *self_p,
                                  int value)
 {
-    uint8_t *buf_p;
-    uint8_t data;
+    struct bitstream_writer_bounds_t bounds;
 
-    buf_p = &self_p->buf_p[self_p->byte_offset];
-    data = *buf_p;
-    *buf_p = 0;
-    data &= ~(0x80 >> self_p->bit_offset);
+    bitstream_writer_bounds_save(&bounds,
+                                 self_p,
+                                 (8 * self_p->byte_offset) + self_p->bit_offset,
+                                 1);
     bitstream_writer_write_bit(self_p, value);
-    *buf_p |= data;
+    bitstream_writer_bounds_restore(&bounds);
 }
 
 void bitstream_writer_insert_bytes(struct bitstream_writer_t *self_p,
                                    const uint8_t *buf_p,
                                    int length)
 {
-    int i;
+    struct bitstream_writer_bounds_t bounds;
 
-    for (i = 0; i < length; i++) {
-        bitstream_writer_insert_u8(self_p, buf_p[i]);
-    }
+    bitstream_writer_bounds_save(&bounds,
+                                 self_p,
+                                 (8 * self_p->byte_offset) + self_p->bit_offset,
+                                 8 * length);
+    bitstream_writer_write_bytes(self_p, buf_p, length);
+    bitstream_writer_bounds_restore(&bounds);
 }
 
 void bitstream_writer_insert_u8(struct bitstream_writer_t *self_p,
                                 uint8_t value)
 {
-    int i;
+    struct bitstream_writer_bounds_t bounds;
 
-    for (i = 0; i < 8; i++) {
-        bitstream_writer_insert_bit(self_p, value >> (7 - i));
-    }
+    bitstream_writer_bounds_save(&bounds,
+                                 self_p,
+                                 (8 * self_p->byte_offset) + self_p->bit_offset,
+                                 8);
+    bitstream_writer_write_u8(self_p, value);
+    bitstream_writer_bounds_restore(&bounds);
 }
 
 void bitstream_writer_insert_u16(struct bitstream_writer_t *self_p,
                                  uint16_t value)
 {
-    bitstream_writer_insert_u8(self_p, value >> 8);
-    bitstream_writer_insert_u8(self_p, value);
+    struct bitstream_writer_bounds_t bounds;
+
+    bitstream_writer_bounds_save(&bounds,
+                                 self_p,
+                                 (8 * self_p->byte_offset) + self_p->bit_offset,
+                                 16);
+    bitstream_writer_write_u16(self_p, value);
+    bitstream_writer_bounds_restore(&bounds);
 }
 
 void bitstream_writer_insert_u32(struct bitstream_writer_t *self_p,
                                  uint32_t value)
 {
-    bitstream_writer_insert_u8(self_p, value >> 24);
-    bitstream_writer_insert_u8(self_p, value >> 16);
-    bitstream_writer_insert_u8(self_p, value >> 8);
-    bitstream_writer_insert_u8(self_p, value);
+    struct bitstream_writer_bounds_t bounds;
+
+    bitstream_writer_bounds_save(&bounds,
+                                 self_p,
+                                 (8 * self_p->byte_offset) + self_p->bit_offset,
+                                 32);
+    bitstream_writer_write_u32(self_p, value);
+    bitstream_writer_bounds_restore(&bounds);
 }
 
 void bitstream_writer_insert_u64(struct bitstream_writer_t *self_p,
                                  uint64_t value)
 {
-    bitstream_writer_insert_u8(self_p, value >> 56);
-    bitstream_writer_insert_u8(self_p, value >> 48);
-    bitstream_writer_insert_u8(self_p, value >> 40);
-    bitstream_writer_insert_u8(self_p, value >> 32);
-    bitstream_writer_insert_u8(self_p, value >> 24);
-    bitstream_writer_insert_u8(self_p, value >> 16);
-    bitstream_writer_insert_u8(self_p, value >> 8);
-    bitstream_writer_insert_u8(self_p, value);
+    struct bitstream_writer_bounds_t bounds;
+
+    bitstream_writer_bounds_save(&bounds,
+                                 self_p,
+                                 (8 * self_p->byte_offset) + self_p->bit_offset,
+                                 64);
+    bitstream_writer_write_u64(self_p, value);
+    bitstream_writer_bounds_restore(&bounds);
 }
 
 void bitstream_writer_insert_u64_bits(struct bitstream_writer_t *self_p,
                                       uint64_t value,
                                       int number_of_bits)
 {
-    int i;
+    struct bitstream_writer_bounds_t bounds;
 
-    for (i = 0; i < number_of_bits; i++) {
-        bitstream_writer_insert_bit(self_p, value >> (number_of_bits - i - 1));
+    bitstream_writer_bounds_save(&bounds,
+                                 self_p,
+                                 (8 * self_p->byte_offset) + self_p->bit_offset,
+                                 number_of_bits);
+    bitstream_writer_write_u64_bits(self_p, value, number_of_bits);
+    bitstream_writer_bounds_restore(&bounds);
+}
+
+void bitstream_writer_seek(struct bitstream_writer_t *self_p,
+                           int offset)
+{
+    offset += self_p->bit_offset;
+    self_p->byte_offset += (offset / 8);
+    self_p->bit_offset = (offset % 8);
+}
+
+void bitstream_writer_bounds_save(struct bitstream_writer_bounds_t *self_p,
+                                  struct bitstream_writer_t *writer_p,
+                                  int bit_offset,
+                                  int length)
+{
+    int number_of_bits;
+
+    self_p->writer_p = writer_p;
+    number_of_bits = (bit_offset % 8);
+
+    if (number_of_bits == 0) {
+        self_p->first_byte_offset = -1;
+    } else {
+        self_p->first_byte_offset = (bit_offset / 8);
+        self_p->first_byte = writer_p->buf_p[self_p->first_byte_offset];
+        self_p->first_byte &= (0xff00 >> number_of_bits);
+    }
+
+    number_of_bits = ((bit_offset + length) % 8);
+
+    if (number_of_bits == 0) {
+        self_p->last_byte_offset = -1;
+    } else {
+        self_p->last_byte_offset = ((bit_offset + length) / 8);
+        self_p->last_byte = writer_p->buf_p[self_p->last_byte_offset];
+        self_p->last_byte &= ~(0xff00 >> number_of_bits);
+        writer_p->buf_p[self_p->last_byte_offset] = 0;
+    }
+
+    if (self_p->first_byte_offset != -1) {
+        writer_p->buf_p[self_p->first_byte_offset] = 0;
+    }
+}
+
+void bitstream_writer_bounds_restore(struct bitstream_writer_bounds_t *self_p)
+{
+    if (self_p->first_byte_offset != -1) {
+        self_p->writer_p->buf_p[self_p->first_byte_offset] |= self_p->first_byte;
+    }
+
+    if (self_p->last_byte_offset != -1) {
+        self_p->writer_p->buf_p[self_p->last_byte_offset] |= self_p->last_byte;
     }
 }
 
