@@ -468,6 +468,39 @@ TEST(insert_u64_bits)
     ASSERT_MEMORY(&buf[0], "\x09\x1a\x2f\xff", 4);
 }
 
+TEST(writer_seek)
+{
+    struct bitstream_writer_t writer;
+    uint8_t buf[32];
+
+    memset(&buf[0], 0xff, sizeof(buf));
+    bitstream_writer_init(&writer, &buf[0]);
+
+    bitstream_writer_seek(&writer, 8);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 1);
+    bitstream_writer_write_bit(&writer, 0);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
+    ASSERT_MEMORY(&buf[0], "\xff\x00\xff", 3);
+
+    bitstream_writer_seek(&writer, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
+    bitstream_writer_write_bit(&writer, 1);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 2);
+    ASSERT_MEMORY(&buf[0], "\xff\x20\xff", 3);
+
+    bitstream_writer_seek(&writer, 16);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 4);
+    bitstream_writer_insert_bit(&writer, 0);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 4);
+    ASSERT_MEMORY(&buf[0], "\xff\x20\xff\xef", 4);
+
+    bitstream_writer_seek(&writer, -9);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
+    bitstream_writer_insert_bit(&writer, 0);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 3);
+    ASSERT_MEMORY(&buf[0], "\xff\x20\xef\xef", 4);
+}
+
 TEST(read_bit)
 {
     struct bitstream_reader_t reader;
@@ -596,6 +629,26 @@ TEST(read_u64_bits)
     ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 36), 0x123456789ll);
 }
 
+TEST(reader_seek)
+{
+    struct bitstream_reader_t reader;
+    uint8_t buf[] = { 0x12, 0x34, 0x56, 0x78, 0x91, 0x23, 0x45, 0x67, 0x89 };
+
+    bitstream_reader_init(&reader, &buf[0]);
+
+    bitstream_reader_seek(&reader, 16);
+    ASSERT_EQ(bitstream_reader_read_u8(&reader), 0x56);
+
+    bitstream_reader_seek(&reader, -8);
+    ASSERT_EQ(bitstream_reader_read_u8(&reader), 0x56);
+
+    bitstream_reader_seek(&reader, 1);
+    ASSERT_EQ(bitstream_reader_read_u8(&reader), 0xf1);
+
+    bitstream_reader_seek(&reader, -8);
+    ASSERT_EQ(bitstream_reader_read_u8(&reader), 0xf1);
+}
+
 int main()
 {
     return RUN_TESTS(
@@ -617,6 +670,7 @@ int main()
         insert_u32,
         insert_u64,
         insert_u64_bits,
+        writer_seek,
         read_bit,
         read_bytes,
         read_u8,
@@ -626,6 +680,7 @@ int main()
         read_u8_bits,
         read_u16_bits,
         read_u32_bits,
-        read_u64_bits
+        read_u64_bits,
+        reader_seek
     );
 }
