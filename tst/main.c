@@ -585,48 +585,24 @@ TEST(read_u64)
     ASSERT_EQ(bitstream_reader_read_u64(&reader), 0xf1);
 }
 
-TEST(read_u8_bits)
-{
-    struct bitstream_reader_t reader;
-    uint8_t buf[] = { 0x11 };
-
-    bitstream_reader_init(&reader, &buf[0]);
-
-    ASSERT_EQ(bitstream_reader_read_u8_bits(&reader, 4), 0x01);
-    ASSERT_EQ(bitstream_reader_read_u8_bits(&reader, 4), 0x01);
-}
-
-TEST(read_u16_bits)
-{
-    struct bitstream_reader_t reader;
-    uint8_t buf[] = { 0x12, 0x31, 0x23 };
-
-    bitstream_reader_init(&reader, &buf[0]);
-
-    ASSERT_EQ(bitstream_reader_read_u16_bits(&reader, 12), 0x123);
-    ASSERT_EQ(bitstream_reader_read_u16_bits(&reader, 12), 0x123);
-}
-
-TEST(read_u32_bits)
-{
-    struct bitstream_reader_t reader;
-    uint8_t buf[] = { 0x12, 0x34, 0x51, 0x23, 0x45 };
-
-    bitstream_reader_init(&reader, &buf[0]);
-
-    ASSERT_EQ(bitstream_reader_read_u32_bits(&reader, 20), 0x12345);
-    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 20), 0x12345);
-}
-
 TEST(read_u64_bits)
 {
     struct bitstream_reader_t reader;
-    uint8_t buf[] = { 0x12, 0x34, 0x56, 0x78, 0x91, 0x23, 0x45, 0x67, 0x89 };
+    uint8_t buf[] = {
+        0x12, 0x34, 0x56, 0x78, 0x91, 0x23, 0x45, 0x67, 0x89, 0xaa,
+        0x55, 0x12
+    };
 
     bitstream_reader_init(&reader, &buf[0]);
 
     ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 36), 0x123456789ll);
     ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 36), 0x123456789ll);
+    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 1), 0x1);
+    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 2), 0x1);
+    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 5), 0xa);
+    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 9), 0xaa);
+    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 6), 0x9);
+    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 1), 0x0);
 }
 
 TEST(reader_seek)
@@ -677,9 +653,6 @@ int main()
         read_u16,
         read_u32,
         read_u64,
-        read_u8_bits,
-        read_u16_bits,
-        read_u32_bits,
         read_u64_bits,
         reader_seek
     );
