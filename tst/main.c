@@ -207,6 +207,14 @@ TEST(write_u64_bits)
         "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
         "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\xc2",
         28);
+
+    bitstream_writer_write_u64_bits(&writer, 1, 0);
+    ASSERT_EQ(bitstream_writer_size_in_bytes(&writer), 28);
+    ASSERT_MEMORY(
+        &buf[0],
+        "\x12\x34\x56\x78\x91\x23\x45\x67\x89\x81\x01\x00\x00\x00\x00\x00"
+        "\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\xc2",
+        28);
 }
 
 TEST(write_u64_bits_single_bit)
@@ -603,6 +611,7 @@ TEST(read_u64_bits)
     ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 9), 0xaa);
     ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 6), 0x9);
     ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 1), 0x0);
+    ASSERT_EQ(bitstream_reader_read_u64_bits(&reader, 0), 0x0);
 }
 
 TEST(reader_seek)
