@@ -1,4 +1,4 @@
-#include "narwhal.h"
+#include "nala.h"
 #include "bitstream.h"
 
 TEST(write_bit)
@@ -632,37 +632,4 @@ TEST(reader_seek)
 
     bitstream_reader_seek(&reader, -8);
     ASSERT_EQ(bitstream_reader_read_u8(&reader), 0xf1);
-}
-
-int main()
-{
-    return RUN_TESTS(
-        write_bit,
-        write_bytes,
-        write_u8,
-        write_u16,
-        write_u32,
-        write_u64,
-        write_u64_bits,
-        write_u64_bits_single_bit,
-        write_repeated_bit,
-        write_repeated_u8,
-        write_bounds_save_restore,
-        insert_bit,
-        insert_bytes,
-        insert_u8,
-        insert_u16,
-        insert_u32,
-        insert_u64,
-        insert_u64_bits,
-        writer_seek,
-        read_bit,
-        read_bytes,
-        read_u8,
-        read_u16,
-        read_u32,
-        read_u64,
-        read_u64_bits,
-        reader_seek
-    );
 }
