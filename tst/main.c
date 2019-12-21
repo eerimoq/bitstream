@@ -1,3 +1,4 @@
+#include <string.h>
 #include "nala.h"
 #include "bitstream.h"
 
@@ -632,4 +633,25 @@ TEST(reader_seek)
 
     bitstream_reader_seek(&reader, -8);
     ASSERT_EQ(bitstream_reader_read_u8(&reader), 0xf1);
+}
+
+TEST(reader_tell)
+{
+    struct bitstream_reader_t reader;
+    uint8_t buf[] = { 0x12, 0x34, 0x56, 0x78, 0x91, 0x23, 0x45, 0x67, 0x89 };
+
+    bitstream_reader_init(&reader, &buf[0]);
+    ASSERT_EQ(bitstream_reader_tell(&reader), 0);
+
+    bitstream_reader_seek(&reader, 16);
+    ASSERT_EQ(bitstream_reader_tell(&reader), 16);
+
+    bitstream_reader_seek(&reader, -8);
+    ASSERT_EQ(bitstream_reader_tell(&reader), 8);
+
+    bitstream_reader_seek(&reader, 1);
+    ASSERT_EQ(bitstream_reader_tell(&reader), 9);
+
+    bitstream_reader_seek(&reader, -8);
+    ASSERT_EQ(bitstream_reader_tell(&reader), 1);
 }
