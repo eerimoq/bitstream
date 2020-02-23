@@ -4,7 +4,7 @@ all:
 	    -ftest-coverage \
 	    -Wall \
 	    -Werror \
-	    -I.. \
-	    ../bitstream.c *.c \
+	    -I../include \
+	    ../src/bitstream.c *.c \
 	    -o main
 	./main
