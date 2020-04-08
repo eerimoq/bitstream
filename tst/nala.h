@@ -2,10 +2,11 @@
 #define NALA_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#define NALA_VERSION "0.117.0"
+#define NALA_VERSION "0.141.0"
 
 /**
  * Assert that given characters, numbers, pointers or strings are
@@ -61,13 +62,13 @@
 /**
  * Assert that given memory regions are equal.
  */
-#define ASSERT_MEMORY(actual, expected, size)   \
+#define ASSERT_MEMORY_EQ(actual, expected, size)        \
     nala_assert_memory(actual, expected, size)
 
 /**
  * Assert that given arrays are equal.
  */
-#define ASSERT_ARRAY(actual, expected, size)          \
+#define ASSERT_ARRAY_EQ(actual, expected, size)                        \
     NALA_ASSERT_ARRAY_FUNC(actual)(actual, expected, sizeof((actual)[0]), size)
 
 /**
@@ -129,6 +130,12 @@
         nala_register_test(&nala_test_ ## name);        \
     }                                                   \
     static void name(void)
+
+/**
+ * Performs post-test checks and cleanup, and then exits with status
+ * 0. The status parameter is ignored.
+ */
+void nala_exit(int status);
 
 /*
  * Everything below is for Nala-internal use only!
