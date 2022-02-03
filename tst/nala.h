@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define NALA_VERSION "0.141.0"
+#define NALA_VERSION "0.179.0"
 
 /**
  * Assert that given characters, numbers, pointers or strings are
@@ -47,6 +47,16 @@
     NALA_ASSERT_FUNC(actual)((actual), (expected), NALA_CHECK_GE)
 
 /**
+ * Assert that given value is true.
+ */
+#define ASSERT_TRUE(actual) nala_assert_true(actual)
+
+/**
+ * Assert that given value is false.
+ */
+#define ASSERT_FALSE(actual) nala_assert_false(actual)
+
+/**
  * Assert that given haystack string contains given needle string.
  */
 #define ASSERT_SUBSTRING(haystack, needle)      \
@@ -66,25 +76,35 @@
     nala_assert_memory(actual, expected, size)
 
 /**
+ * Assert that given files are equal.
+ */
+#define ASSERT_FILE_EQ(actual, expected)        \
+    nala_assert_file_eq(actual, expected)
+
+/**
  * Assert that given arrays are equal.
  */
 #define ASSERT_ARRAY_EQ(actual, expected, size)                        \
     NALA_ASSERT_ARRAY_FUNC(actual)(actual, expected, sizeof((actual)[0]), size)
 
 /**
- * Assert that given function pointes are equal.
+ * Assert that given function pointers are equal.
  */
-#define ASSERT_FUNCTION_POINTERS_EQ(actual, expected)                   \
-    if (actual != expected) {                                           \
-        nala_test_failure(nala_format("%p != %p", actual, expected));   \
+#define ASSERT_FUNCTION_POINTER_EQ(actual, expected)            \
+    if (actual != expected) {                                   \
+        nala_test_failure(nala_format("%p is not equal to %p",  \
+                                      actual,                   \
+                                      expected));               \
     }
 
 /**
- * Assert that given function pointes are not equal.
+ * Assert that given function pointers are not equal.
  */
-#define ASSERT_FUNCTION_POINTERS_NE(actual, expected)                   \
-    if (actual == expected) {                                           \
-        nala_test_failure(nala_format("%p == %p", actual, expected));   \
+#define ASSERT_FUNCTION_POINTER_NE(actual, expected)            \
+    if (actual == expected) {                                   \
+        nala_test_failure(nala_format("%p is equal to %p",      \
+                                      actual,                   \
+                                      expected));               \
     }
 
 /**
@@ -101,14 +121,23 @@
  * A capture output block.
  */
 #define CAPTURE_OUTPUT(stdout_name, stderr_name)                        \
-    int stdout_name ## i;                                               \
+    int NALA_UNIQUE(stdout_name);                                       \
     static char *stdout_name = NULL;                                    \
     static char *stderr_name = NULL;                                    \
                                                                         \
-    for (stdout_name ## i = 0, nala_capture_output_start(&stdout_name,  \
-                                                         &stderr_name); \
-         stdout_name ## i < 1;                                          \
-         stdout_name ## i++, nala_capture_output_stop())
+    for (NALA_UNIQUE(stdout_name) = 0,                                  \
+             nala_capture_output_start(&stdout_name, &stderr_name);     \
+         NALA_UNIQUE(stdout_name) < 1;                                  \
+         NALA_UNIQUE(stdout_name)++, nala_capture_output_stop())
+
+/**
+ * Additional message on error block. May be nested.
+ */
+#define WITH_MESSAGE(format, ...)                                       \
+    int NALA_UNIQUE(i);                                                 \
+    for (NALA_UNIQUE(i) = 0, nala_with_message_push(format, ##__VA_ARGS__); \
+         NALA_UNIQUE(i) < 1;                                            \
+         NALA_UNIQUE(i)++, nala_with_message_pop())
 
 /**
  * A test case.
@@ -119,7 +148,6 @@
     static struct nala_test_t nala_test_ ## name = {    \
         .name_p = #name,                                \
         .file_p = __FILE__,                             \
-        .line = __LINE__,                               \
         .func = name,                                   \
         .before_fork_func = name ## _before_fork,       \
         .next_p = NULL                                  \
@@ -130,6 +158,18 @@
         nala_register_test(&nala_test_ ## name);        \
     }                                                   \
     static void name(void)
+
+/**
+ * Allocate a memory buffer of given size that is automatically freed
+ * after the test. Always returns a valid pointer.
+ */
+void *nala_alloc(size_t size);
+
+/**
+ * Automatically free given buffer after the test. free() is called to
+ * free the buffer.
+ */
+void nala_auto_free(void *buf_p);
 
 /**
  * Performs post-test checks and cleanup, and then exits with status
@@ -147,6 +187,17 @@ void nala_exit(int status);
 #define NALA_CHECK_LE  3
 #define NALA_CHECK_GT  4
 #define NALA_CHECK_GE  5
+
+#define NALA_TOKENPASTE(x, y) NALA_TOKENPASTE2(x, y)
+
+#define NALA_TOKENPASTE2(x, y) x ## y
+
+#define NALA_UNIQUE(x)  NALA_TOKENPASTE(x, NALA_TOKENPASTE(___, __LINE__))
+
+struct nala_traceback_t {
+    void *addresses[32];
+    int depth;
+};
 
 #define NALA_ASSERT_FUNC(value)                         \
     _Generic((value),                                   \
@@ -206,13 +257,14 @@ void nala_exit(int status);
 struct nala_test_t {
     const char *name_p;
     const char *file_p;
-    int line;
     void (*func)(void);
     void (*before_fork_func)(void);
-    bool executed;
-    int exit_code;
-    int signal_number;
-    float elapsed_time_ms;
+    struct {
+        bool executed;
+        int exit_code;
+        int signal_number;
+        float elapsed_time_ms;
+    } run;
     struct nala_test_t *next_p;
 };
 
@@ -220,14 +272,14 @@ bool nala_check_string_equal(const char *actual_p, const char *expected_p);
 
 const char *nala_format(const char *format_p, ...);
 
-const char *nala_format_string(const char *format_p, ...);
+const char *nala_format_string(const char *prefix_p,
+                               const char *actual_p,
+                               const char *expected_p);
 
 const char *nala_format_memory(const char *prefix_p,
-                               const void *left_p,
-                               const void *right_p,
+                               const void *actual_p,
+                               const void *expected_p,
                                size_t size);
-
-bool nala_check_substring(const char *string_p, const char *substring_p);
 
 bool nala_check_memory(const void *left_p, const void *right_p, size_t size);
 
@@ -372,8 +424,26 @@ void nala_assert_not_substring(const char *haystack_p, const char *needle_p);
 
 void nala_assert_memory(const void *actual_p, const void *expected_p, size_t size);
 
+void nala_assert_string_or_memory(const void *actual_p,
+                                  const void *expected_p,
+                                  size_t size);
+
+void nala_assert_file_eq(const char *actual_p, const char *expected_p);
+
+void nala_assert_true(bool actual);
+
+void nala_assert_false(bool actual);
+
 void nala_assert(bool cond);
 
 void nala_fail(const char *message_p);
+
+void nala_with_message_push(const char *format_p, ...);
+
+void nala_with_message_pop(void);
+
+#ifdef NALA_INCLUDE_NALA_MOCKS_H
+#    include "nala_mocks.h"
+#endif
 
 #endif
