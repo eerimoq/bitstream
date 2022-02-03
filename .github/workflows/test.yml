@@ -10,5 +10,9 @@ jobs:
     - name: Test
       run: |
         make test
+    - name: Library
+      run: |
         make library
+    - name: Install
+      run: |
         make install PREFIX=root
